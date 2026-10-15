@@ -1,0 +1,18 @@
+{
+  "category": "General",
+  "changelog": "Initial release.",
+  "description": "Forces SubtitleMethod=Encode on non-static video stream requests that select a subtitle stream.",
+  "guid": "87379d04-121f-4b92-9c79-6741d9205946",
+  "name": "Force Subtitle Burn-In",
+  "overview": "Burn in selected subtitles whenever video is transcoded.",
+  "owner": "local",
+  "targetAbi": "10.11.11.0",
+  "timestamp": "2026-10-15T00:00:00Z",
+  "version": "1.0.0.0",
+  "status": "Active",
+  "autoUpdate": false,
+  "imagePath": "",
+  "assemblies": [
+    "Jellyfin.Plugin.ForceSubtitleBurnIn.dll"
+  ]
+}
