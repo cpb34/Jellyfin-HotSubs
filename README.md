@@ -8,7 +8,7 @@ Built for Jellyfin 10.11.11.
 
 1. In Jellyfin, go to **Dashboard → Plugins → Repositories** and add a repository:
    - **Name:** `HotSubs`
-   - **URL:** `https://raw.githubusercontent/cpb34/Jellyfin-HotSubs/master/manifest.json`
+   - **URL:** `https://raw.githubusercontent.com/cpb34/Jellyfin-HotSubs/master/manifest.json`
 2. Open **Catalog**, find **HotSubs**, and click **Install**.
 3. Restart Jellyfin.
 
