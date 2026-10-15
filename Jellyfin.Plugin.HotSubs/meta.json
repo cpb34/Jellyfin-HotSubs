@@ -1,0 +1,18 @@
+{
+  "category": "General",
+  "changelog": "Renamed to HotSubs.",
+  "description": "Makes the server burn the selected subtitle into the video for every client, including when the file could otherwise direct play.",
+  "guid": "87379d04-121f-4b92-9c79-6741d9205946",
+  "name": "HotSubs",
+  "overview": "Always burn in subtitles.",
+  "owner": "local",
+  "targetAbi": "10.11.11.0",
+  "timestamp": "2026-10-15T00:00:00Z",
+  "version": "0.2.0.0",
+  "status": "Active",
+  "autoUpdate": true,
+  "imagePath": "",
+  "assemblies": [
+    "Jellyfin.Plugin.HotSubs.dll"
+  ]
+}
