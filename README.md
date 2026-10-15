@@ -1,6 +1,6 @@
 # HotSubs
 
-Jellyfin plugin that burns in all subtitles. Fixes transcoding issues between Moonfin for Android and overrides web client default settings.
+Jellyfin plugin that burns in all subtitles. Fixes transcoding issues in Moonfin for Android and overrides web client default settings.
 
 Built for Jellyfin **10.11.11**.
 
