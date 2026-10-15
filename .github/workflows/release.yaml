@@ -63,5 +63,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
           if git diff --cached --quiet; then echo "manifest unchanged"; exit 0; fi
-          git commit -m "manifest: $VERSION"
+          git commit -m "$TAG"
           git push origin "$DEFAULT_BRANCH"
