@@ -1,0 +1,71 @@
+name: Release
+
+# Publish a release in the GitHub web UI (Releases → Draft a new release) with a tag like
+# v1.0.1. This workflow builds the plugin, attaches the zip to that release, and adds the
+# version to manifest.json on the default branch. The release description becomes the
+# changelog. Re-running the workflow replaces the zip and the manifest entry.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT: Jellyfin.Plugin.ForceSubtitleBurnIn
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      TAG: ${{ github.event.release.tag_name }}
+      NOTES: ${{ github.event.release.body }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Derive version
+        run: |
+          IFS=. read -r a b c d <<< "${TAG#v}"
+          VERSION="${a}.${b:-0}.${c:-0}.${d:-0}"
+          [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Tag '$TAG' is not like v1.2.3"; exit 1; }
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: dotnet build "$PROJECT" -c Release -p:Version="$VERSION" -p:AssemblyVersion="$VERSION" -p:FileVersion="$VERSION"
+
+      - name: Package
+        run: |
+          # Only the plugin DLL. Jellyfin writes meta.json itself from the repository manifest on install.
+          ZIP="force-subtitle-burnin_${VERSION}.zip"
+          mkdir -p dist
+          zip -j -X "dist/$ZIP" "$PROJECT/bin/Release/net9.0/$PROJECT.dll"
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+
+      - name: Attach zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "dist/$ZIP" --clobber
+
+      - name: Update manifest.json
+        run: |
+          git fetch origin "$DEFAULT_BRANCH"
+          git checkout -B "$DEFAULT_BRANCH" "origin/$DEFAULT_BRANCH"
+          bash scripts/update-manifest.sh manifest.json "$PROJECT/meta.json" "$VERSION" "dist/$ZIP" \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP}" \
+            "${NOTES:-Release $VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          if git diff --cached --quiet; then echo "manifest unchanged"; exit 0; fi
+          git commit -m "manifest: $VERSION"
+          git push origin "$DEFAULT_BRANCH"
