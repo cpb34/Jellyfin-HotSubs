@@ -2,18 +2,18 @@
   {
     "guid": "87379d04-121f-4b92-9c79-6741d9205946",
     "name": "HotSubs",
-    "description": "Makes the server burn the selected subtitle into the video for every client, including when the file could otherwise direct play.",
-    "overview": "Always burn in subtitles.",
+    "description": "Burns in all subtitles. Fixes transcoding issues in Moonfin for Android and overrides web client default settings.",
+    "overview": "v0.2",
     "owner": "local",
-    "category": "General",
+    "category": "Subtitles",
     "versions": [
       {
         "version": "0.2.0.0",
         "changelog": "Release 0.2.0.0",
         "targetAbi": "10.11.11.0",
         "sourceUrl": "https://github.com/cpb34/Jellyfin-HotSubs/releases/download/v0.2/hotsubs_0.2.0.0.zip",
-        "checksum": "c45fc8e0fa38ff82e20ca05a182c1498",
-        "timestamp": "2026-10-15T05:36:46Z"
+        "checksum": "7912e7e93cc17bcd90712c1fce423c52",
+        "timestamp": "2026-10-15T05:49:21Z"
       },
       {
         "version": "0.1.0.0",
