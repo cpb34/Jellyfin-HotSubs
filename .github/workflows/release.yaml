@@ -1,9 +1,5 @@
 name: Release
 
-# Publish a release in the GitHub web UI (Releases → Draft a new release) with a tag like
-# v1.0.1. This workflow builds the plugin, attaches the zip to that release, and adds the
-# version to manifest.json on the default branch. The release description becomes the
-# changelog. Re-running the workflow replaces the zip and the manifest entry.
 on:
   release:
     types: [published]
@@ -19,7 +15,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      PROJECT: Jellyfin.Plugin.ForceSubtitleBurnIn
+      PROJECT: Jellyfin.Plugin.HotSubs
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       TAG: ${{ github.event.release.tag_name }}
       NOTES: ${{ github.event.release.body }}
@@ -46,7 +42,7 @@ jobs:
       - name: Package
         run: |
           # Only the plugin DLL. Jellyfin writes meta.json itself from the repository manifest on install.
-          ZIP="force-subtitle-burnin_${VERSION}.zip"
+          ZIP="hotsubs_${VERSION}.zip"
           mkdir -p dist
           zip -j -X "dist/$ZIP" "$PROJECT/bin/Release/net9.0/$PROJECT.dll"
           echo "ZIP=$ZIP" >> "$GITHUB_ENV"
