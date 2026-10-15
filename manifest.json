@@ -2,7 +2,7 @@
   {
     "guid": "87379d04-121f-4b92-9c79-6741d9205946",
     "name": "HotSubs",
-    "description": "Jellyfin plugin that burns in all subtitles. Fixes transcoding issues between Moonfin for Android and overrides web client default settings.",
+    "description": "Burns in all subtitles. Fixes issues on Moonfin for Android and overrides web client default settings.",
     "overview": "v0.2",
     "owner": "local",
     "category": "Subtitles",
