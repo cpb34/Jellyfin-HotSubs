@@ -58,7 +58,7 @@ jobs:
           git checkout -B "$DEFAULT_BRANCH" "origin/$DEFAULT_BRANCH"
           bash scripts/update-manifest.sh manifest.json "$PROJECT/meta.json" "$VERSION" "dist/$ZIP" \
             "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP}" \
-            "${NOTES:-Release $VERSION}"
+            "${NOTES:-Release $VERSION}" "$TAG"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
