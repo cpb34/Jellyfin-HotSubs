@@ -12,8 +12,8 @@
         "changelog": "Release 0.3.0.0",
         "targetAbi": "10.11.11.0",
         "sourceUrl": "https://github.com/cpb34/Jellyfin-HotSubs/releases/download/v0.3/hotsubs_0.3.0.0.zip",
-        "checksum": "282e5e4ccb38511c07d3ad8942a0b223",
-        "timestamp": "2026-10-29T02:46:37Z"
+        "checksum": "b72127b652b7b5883269d709818a9996",
+        "timestamp": "2026-10-29T03:00:07Z"
       },
       {
         "version": "0.2.0.0",
