@@ -2,10 +2,7 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using MediaBrowser.Common.Plugins;
-using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Model.Dlna;
-using MediaBrowser.Model.Entities;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
@@ -17,8 +14,9 @@ namespace Jellyfin.Plugin.HotSubs;
 /// Forces server-side subtitle burn-in.
 /// <list type="bullet">
 /// <item>POST /Items/{id}/PlaybackInfo: the posted DeviceProfile is made to accept no client-side subtitle delivery
-/// (no SubtitleProfiles, no subtitles in HLS manifests), and direct play/stream are disabled for items that have
-/// subtitle streams. The server then answers with a transcode URL carrying SubtitleMethod=Encode.</item>
+/// (no SubtitleProfiles, no subtitles in HLS manifests), and direct play, direct stream and video stream copy are
+/// disabled for every item. The server then always encodes the video, with a selected subtitle burned in
+/// (SubtitleMethod=Encode).</item>
 /// <item>Video stream actions: a non-static request that selects a subtitle gets subtitleMethod=Encode.</item>
 /// </list>
 /// Only action arguments (and objects bound for this request) are changed. Never sets a result,
@@ -37,15 +35,13 @@ public sealed class HotSubsActionFilter : IActionFilter
     private const string StaticArg = "static";
 
     // PlaybackInfo action argument names.
-    private const string ItemIdArg = "itemId";
-    private const string MediaSourceIdArg = "mediaSourceId";
     private const string EnableDirectPlayArg = "enableDirectPlay";
     private const string EnableDirectStreamArg = "enableDirectStream";
+    private const string AllowVideoStreamCopyArg = "allowVideoStreamCopy";
     private const string PlaybackInfoDtoArg = "playbackInfoDto";
 
     // PlaybackInfoDto property names.
     private const string DeviceProfileProperty = "DeviceProfile";
-    private const string MediaSourceIdProperty = "MediaSourceId";
 
     private static readonly FrozenSet<string> StreamTargets = FrozenSet.ToFrozenSet(
         [
@@ -70,14 +66,12 @@ public sealed class HotSubsActionFilter : IActionFilter
 
     private static readonly (string Name, Type Type)[] PlaybackInfoParameters =
     [
-        (ItemIdArg, typeof(Guid)),
-        (MediaSourceIdArg, typeof(string)),
         (EnableDirectPlayArg, typeof(bool?)),
         (EnableDirectStreamArg, typeof(bool?)),
+        (AllowVideoStreamCopyArg, typeof(bool?)),
     ];
 
     private readonly IPluginManager _pluginManager;
-    private readonly IMediaSourceManager _mediaSourceManager;
     private readonly IModelMetadataProvider _metadataProvider;
     private readonly ILogger<HotSubsActionFilter> _logger;
 
@@ -85,17 +79,14 @@ public sealed class HotSubsActionFilter : IActionFilter
     /// Initializes a new instance of the <see cref="HotSubsActionFilter"/> class.
     /// </summary>
     /// <param name="pluginManager">Plugin manager, used to read this plugin's configuration.</param>
-    /// <param name="mediaSourceManager">Media source manager, used to check for subtitle streams.</param>
     /// <param name="metadataProvider">MVC model metadata, used to read/write public DTO properties of Jellyfin.Api types.</param>
     /// <param name="logger">Logger.</param>
     public HotSubsActionFilter(
         IPluginManager pluginManager,
-        IMediaSourceManager mediaSourceManager,
         IModelMetadataProvider metadataProvider,
         ILogger<HotSubsActionFilter> logger)
     {
         _pluginManager = pluginManager;
-        _mediaSourceManager = mediaSourceManager;
         _metadataProvider = metadataProvider;
         _logger = logger;
     }
@@ -254,11 +245,19 @@ public sealed class HotSubsActionFilter : IActionFilter
     {
         var args = context.ActionArguments;
 
+        // Query values take precedence over the body in GetPostedPlaybackInfo, so these win, with or
+        // without a body. No direct play and no direct stream keep the server in the path, so a subtitle
+        // turned on mid-playback cannot be switched in the client. No video copy: the video is always
+        // encoded, never remuxed. The server carries allowVideoStreamCopy=false into the TranscodingUrl.
+        args[EnableDirectPlayArg] = false;
+        args[EnableDirectStreamArg] = false;
+        args[AllowVideoStreamCopyArg] = false;
+
         if (!args.TryGetValue(PlaybackInfoDtoArg, out var dto) || dto is null)
         {
             // Empty body: the server falls back to the device's registered profile, a shared object this
             // plugin must not mutate.
-            _logger.LogDebug("HotSubs: PlaybackInfo without a body; passing through unchanged");
+            _logger.LogDebug("HotSubs: PlaybackInfo without a body; transcode forced, subtitle profiles unchanged");
             return;
         }
 
@@ -289,33 +288,7 @@ public sealed class HotSubsActionFilter : IActionFilter
             transcodingProfile.EnableSubtitlesInManifest = false;
         }
 
-        var itemId = args.TryGetValue(ItemIdArg, out var itemIdObj) && itemIdObj is Guid g ? g : Guid.Empty;
-        var mediaSourceId = args.TryGetValue(MediaSourceIdArg, out var msObj) && msObj is string ms
-            ? ms
-            : dtoMetadata.Properties[MediaSourceIdProperty]?.PropertyGetter?.Invoke(dto) as string;
-
-        var hasSubtitles = HasSubtitleStreams(itemId)
-            || (Guid.TryParse(mediaSourceId, out var sourceId) && sourceId != itemId && HasSubtitleStreams(sourceId));
-
-        if (hasSubtitles)
-        {
-            // Query values take precedence over the body in GetPostedPlaybackInfo, so these win.
-            // Without this, a session that starts with subtitles off direct-plays, and turning a
-            // subtitle on mid-playback switches tracks in the client without asking the server.
-            args[EnableDirectPlayArg] = false;
-            args[EnableDirectStreamArg] = false;
-        }
-
-        _logger.LogDebug(
-            "HotSubs: PlaybackInfo item {ItemId}: subtitle profiles cleared, manifest subtitles off, direct play {DirectPlay}",
-            itemId,
-            hasSubtitles ? "disabled (item has subtitle streams)" : "unchanged (no subtitle streams)");
-    }
-
-    private bool HasSubtitleStreams(Guid itemId)
-    {
-        return !itemId.Equals(Guid.Empty)
-            && _mediaSourceManager.GetMediaStreams(new MediaStreamQuery { ItemId = itemId, Type = MediaStreamType.Subtitle }).Count > 0;
+        _logger.LogDebug("HotSubs: PlaybackInfo: transcode forced, subtitle profiles cleared, manifest subtitles off");
     }
 
     private bool IsEnabled()
